@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Astra AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Add Font Awesome for better icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Add Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --secondary-color: #a29bfe;
+            --accent-color: #fd79a8;
+            --dark-color: #2d3436;
+            --light-color: #f9f9f9;
+            --success-color: #00b894;
+            --warning-color: #fdcb6e;
+            --danger-color: #d63031;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+        
+        .chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 950px;
+            margin: 2rem auto;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chat-header h2 {
+            margin: 0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+        
+        .chat-header h2 i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            max-height: 65vh;
+            background-color: #f9f9f9;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        .message-container {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .user-avatar, .assistant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+            flex-shrink: 0;
+        }
+        
+        .message {
+            max-width: 85%;
+            padding: 1rem 1.2rem;
+            border-radius: 1.2rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        
+        .assistant-message {
+            align-self: flex-start;
+            background-color: white;
+            border-bottom-left-radius: 0.25rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .message:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chat-input {
+            padding: 1.2rem;
+            background-color: white;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-input form {
+            display: flex;
+            align-items: center;
+            background-color: #f5f7fa;
+            border-radius: 30px;
+            padding: 0.5rem 0.8rem;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .chat-input form:focus-within {
+            box-shadow: 0 0 0 2px var(--primary-color);
+            background-color: white;
+        }
+        
+        .chat-input input {
+            border: none;
+            background: transparent;
+            padding: 0.8rem 1rem;
+            font-size: 1rem;
+            outline: none;
+            flex-grow: 1;
+        }
+        
+        .chat-input button {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .chat-input button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        /* Typing indicator animation */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: white;
+            border-radius: 1.2rem;
+            border-bottom-left-radius: 0.25rem;
+            width: fit-content;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            opacity: 0.4;
+            animation: typing 1.2s infinite;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        pre {
+            background-color: #2d3436;
+            color: #f9f9f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 0.8rem 0;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        code {
+            font-family: 'Fira Code', SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.875em;
+        }
+        
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes typing {
+            0%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            50% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2><i class="fas fa-robot"></i> Astra AI</h2>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#apiKeyModal">
+                    <i class="fas fa-key"></i> Update API Key
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-light ms-2" id="clear-chat-btn">
+                    <i class="fas fa-broom"></i> Clear Chat
+                </button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message-container">
+                <div class="assistant-avatar"><i class="fas fa-robot"></i></div>
+                <div class="assistant-message message">
+                    <p>👋 Hello! I'm Astra, your AI assistant powered by advanced language models.</p>
+                    <p>I can help you with:</p>
+                    <ul>
+                        <li>Answering questions</li>
+                        <li>Generating creative content</li>
+                        <li>Providing information</li>
+                        <li>Coding assistance</li>
+                    </ul>
+                    <p>How can I assist you today?</p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <form id="chat-form">
+                <input type="text" id="user-input" placeholder="Type your message here..." autocomplete="off">
+                <button type="submit" id="send-button">
+                    <span id="loading-indicator" class="loading d-none"></span>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- API Key Modal -->
+    <div class="modal fade" id="apiKeyModal" tabindex="-1" aria-labelledby="apiKeyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white;">
+                    <h5 class="modal-title" id="apiKeyModalLabel"><i class="fas fa-key"></i> Update API Key</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="api-key-alert" class="alert d-none" role="alert"></div>
+                    <p>Enter your Gemini API key to use your own quota:</p>
+                    <form id="api-key-form">
+                        <div class="mb-3">
+                            <label for="api-key-input" class="form-label">API Key</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="text" class="form-control" id="api-key-input" placeholder="Enter your Gemini API key">
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle"></i> Get your API key from <a href="https://ai.google.dev/" target="_blank" class="text-decoration-none">Google AI Studio <i class="fas fa-external-link-alt fa-xs"></i></a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="update-api-key-btn" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); border: none;">
+                        <i class="fas fa-save"></i> Update API Key
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatForm = document.getElementById('chat-form');
+            const userInput = document.getElementById('user-input');
+            const chatMessages = document.getElementById('chat-messages');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const updateApiKeyBtn = document.getElementById('update-api-key-btn');
+            const apiKeyInput = document.getElementById('api-key-input');
+            const apiKeyAlert = document.getElementById('api-key-alert');
+            
+            // Store conversation history
+            let conversationHistory = [];
+            
+            // Add initial assistant message to history
+            conversationHistory.push({
+                role: 'assistant',
+                content: '👋 Hello! I\'m Astra, your AI assistant powered by advanced language models.\n\nI can help you with:\n- Answering questions\n- Generating creative content\n- Providing information\n- Coding assistance\n\nHow can I assist you today?'
+            });
+
+            // Handle API key update
+            updateApiKeyBtn.addEventListener('click', async function() {
+                const apiKey = apiKeyInput.value.trim();
+                
+                if (!apiKey) {
+                    showApiKeyAlert('Please enter an API key', 'danger');
+                    return;
+                }
+                
+                // Show loading state
+                updateApiKeyBtn.disabled = true;
+                updateApiKeyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+                
+                try {
+                    const response = await fetch('/update-api-key', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            api_key: apiKey
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok && data.success) {
+                        showApiKeyAlert('API key updated successfully!', 'success');
+                        
+                        // Add a system message to the chat
+                        const systemMessage = document.createElement('div');
+                        systemMessage.classList.add('alert', 'alert-success', 'text-center', 'my-2');
+                        systemMessage.textContent = 'API key updated successfully. You can now continue chatting with your own API key.';
+                        chatMessages.appendChild(systemMessage);
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                        
+                        // Close the modal after a delay
+                        setTimeout(() => {
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal'));
+                            modal.hide();
+                        }, 1500);
+                    } else {
+                        showApiKeyAlert(`Error: ${data.error || 'Failed to update API key'}`, 'danger');
+                    }
+                } catch (error) {
+                    showApiKeyAlert(`Error: ${error.message}`, 'danger');
+                } finally {
+                    // Reset button state
+                    updateApiKeyBtn.disabled = false;
+                    updateApiKeyBtn.innerHTML = '<i class="fas fa-save"></i> Update API Key';
+                }
+            });
+            
+            function showApiKeyAlert(message, type) {
+                apiKeyAlert.textContent = message;
+                apiKeyAlert.className = `alert alert-${type}`;
+                apiKeyAlert.classList.remove('d-none');
+            }
+
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const message = userInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to UI
+                addMessage(message, 'user');
+                
+                // Add user message to history
+                conversationHistory.push({
+                    role: 'user',
+                    content: message
+                });
+                
+                // Clear input
+                userInput.value = '';
+                
+                // Show typing indicator instead of loading spinner
+                showTypingIndicator();
+                
+                try {
+                    // Send message to server
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            history: conversationHistory
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Remove typing indicator
+                    removeTypingIndicator();
+                    
+                    if (response.ok) {
+                        // Add assistant response to UI
+                        addMessage(data.response, 'assistant');
+                        
+                        // Add assistant response to history
+                        conversationHistory.push({
+                            role: 'assistant',
+                            content: data.response
+                        });
+                        
+                        // Display note if using fallback model
+                        if (data.note) {
+                            const noteDiv = document.createElement('div');
+                            noteDiv.classList.add('alert', 'alert-info', 'mt-2', 'mb-2', 'small');
+                            noteDiv.textContent = data.note;
+                            chatMessages.appendChild(noteDiv);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        }
+                    } else {
+                        // Handle error
+                        let errorMessage = `Error: ${data.error}`;
+                        
+                        // Special handling for quota errors
+                        if (data.quota_exceeded) {
+                            const quotaAlert = document.createElement('div');
+                            quotaAlert.classList.add('alert', 'alert-warning', 'mt-3', 'mb-3');
+                            quotaAlert.innerHTML = `
+                                <h5><i class="fas fa-exclamation-triangle me-2"></i> API Quota Exceeded</h5>
+                                <p>You've reached the free usage limit for the Gemini API.</p>
+                                <p>Options:</p>
+                                <ul>
+                                    <li>Wait a while before trying again</li>
+                                    <li>Get your own API key from <a href="https://ai.google.dev/" target="_blank">Google AI Studio</a></li>
+                                    <li>Update the API key in app.py</li>
+                                </ul>
+                            `;
+                            chatMessages.appendChild(quotaAlert);
+                            chatMessages.scrollTop = chatMessages.scrollHeight;
+                        } else {
+                            // If available models were returned, display them
+                            if (data.available_models) {
+                                errorMessage += '\n\nAvailable models:';
+                                data.available_models.forEach(model => {
+                                    errorMessage += `\n- ${model}`;
+                                });
+                                errorMessage += '\n\nPlease try again or update the model name in app.py.';
+                            }
+                            
+                            // If technical details are available
+                            if (data.technical_details) {
+                                errorMessage += '\n\nTechnical details:\n' + data.technical_details;
+                            }
+                            
+                            addMessage(errorMessage, 'assistant');
+                        }
+                    }
+                } catch (error) {
+                    addMessage(`Error: ${error.message}`, 'assistant');
+                } finally {
+                    // Hide loading indicator
+                    loadingIndicator.classList.add('d-none');
+                }
+            });
+            
+            // Clear chat functionality
+            document.getElementById('clear-chat-btn').addEventListener('click', function() {
+                // Clear the UI
+                chatMessages.innerHTML = '';
+                
+                // Reset conversation history but keep the initial greeting
+                conversationHistory = [{
+                    role: 'assistant',
+                    content: '👋 Hello! I\'m Astra, your AI assistant powered by advanced language models.\n\nI can help you with:\n- Answering questions\n- Generating creative content\n- Providing information\n- Coding assistance\n\nHow can I assist you today?'
+                }];
+                
+                // Add the initial message back to the UI
+                addMessage(conversationHistory[0].content, 'assistant');
+                
+                // Show a toast notification
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = '5';
+                toast.innerHTML = `
+                    <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%); color: white;">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong class="me-auto">Astra AI</strong>
+                            <small>Just now</small>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            Chat history has been cleared!
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                // Remove the toast after 3 seconds
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            });
+            
+            // Add typing indicator function
+            function showTypingIndicator() {
+                const typingContainer = document.createElement('div');
+                typingContainer.id = 'typing-indicator';
+                typingContainer.className = 'typing-indicator';
+                
+                for (let i = 0; i < 3; i++) {
+                    const dot = document.createElement('span');
+                    typingContainer.appendChild(dot);
+                }
+                
+                chatMessages.appendChild(typingContainer);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+            
+            // Add event listener for Enter key in input field
+            userInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            });
+            
+            // Add message function with improved styling and animations
+            function addMessage(content, role) {
+                const container = document.createElement('div');
+                container.className = 'message-container';
+                
+                const avatar = document.createElement('div');
+                avatar.className = role === 'user' ? 'user-avatar' : 'assistant-avatar';
+                
+                const icon = document.createElement('i');
+                icon.className = role === 'user' ? 'fas fa-user' : 'fas fa-robot';
+                avatar.appendChild(icon);
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = role === 'user' ? 'message user-message' : 'message assistant-message';
+                
+                // Markdown rendering and code highlighting
+                messageDiv.innerHTML = marked.parse(content);
+                messageDiv.querySelectorAll('pre code').forEach((block) => {
+                    block.innerHTML = block.innerHTML
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                });
+                
+                container.appendChild(avatar);
+                container.appendChild(messageDiv);
+                
+                // Add to chat with a slight delay for animation effect
+                setTimeout(() => {
+                    chatMessages.appendChild(container);
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>
